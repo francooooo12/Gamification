@@ -1,89 +1,87 @@
 function endpoint(app, connpool) {
 
-    app.post("/api/tasks", (req, res) => {
-        var errors = []
-        /* controllo dati inseriti
-        if (!req.body.description) {
-            errors.push("No description specified");
+    app.post("/api/interventi", (req, res) => {
+        var errors = [];
+        if (!req.body.tipo) {
+            errors.push("Tipo di intervento non specificato");
         }
-        if (req.body.status === "") {
-            errors.push("No status specified");
+        if (!req.body.lezioneID) {
+            errors.push("ID lezione non specificato");
         }
-        */
+        if (!req.body.studenteID) {
+            errors.push("ID studente non specificato");
+        }
         if (errors.length) {
-            res.status(400).json({ "error": errors.join(",") });
+            res.status(400).json({ "error": errors.join(", ") });
             return;
         }
         var data = {
-            description: req.body.description,
-            status: req.body.status,
-        }
+            tipo: req.body.tipo,
+            lezioneID: req.body.lezioneID,
+            studenteID: req.body.studenteID,
+        };
 
-        var sql = 'INSERT INTO task (description, status) VALUES (?,?)'
-        var params = [data.description, data.status]
+        var sql = 'INSERT INTO interventi (tipo, lezioneID, studenteID) VALUES (?,?,?)';
+        var params = [data.tipo, data.lezioneID, data.studenteID];
         connpool.query(sql, params, (error, results) => {
             if (error) {
-                res.status(400).json({ "error": error.message })
+                res.status(400).json({ "error": error.message });
                 return;
             }
             res.json({
                 "message": "success",
                 "data": data,
-                "id": this.insertID
-            })
-            console.log(results)
+                "id": results.insertId
+            });
         });
 
-    })
-
-
-
-    app.get("/api/tasks", (req, res, next) => {
-        var sql = "select * from task"
-        var params = []
-        connpool.query(sql, params, (err, rows) => {
-            if (err) {
-              res.status(400).json({"error":err.message});
-              return;
-            }
-            res.json({
-                "message":"success",
-                "data":rows
-            })
-          });
     });
 
-
-    app.get("/api/tasks/:id", (req, res) => {
-        var sql = "select * from task where task_id = ?"
-        var params = [req.params.id]
-        connpool.query(sql, params, (err, rows) => {
+    app.get("/api/interventi", (req, res) => {
+        var sql = "SELECT * FROM interventi";
+        connpool.query(sql, (err, rows) => {
             if (err) {
-              res.status(400).json({"error":err.message});
-              return;
+                res.status(400).json({ "error": err.message });
+                return;
             }
             res.json({
-                "message":"success",
-                "data":rows[0]
-            })
-          });
+                "message": "success",
+                "data": rows
+            });
+        });
     });
 
+    app.get("/api/interventi/:id", (req, res) => {
+        var sql = "SELECT * FROM interventi WHERE id = ?";
+        var params = [req.params.id];
+        connpool.query(sql, params, (err, rows) => {
+            if (err) {
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            res.json({
+                "message": "success",
+                "data": rows[0]
+            });
+        });
+    });
 
-    app.put("/api/tasks/:id", (req, res) => {
+    app.put("/api/interventi/:id", (req, res) => {
         var data = {
-            description: req.body.description,
-            status: req.body.status,
-        }
+            tipo: req.body.tipo,
+            lezioneID: req.body.lezioneID,
+            studenteID: req.body.studenteID,
+        };
         connpool.execute(
-            `UPDATE task set 
-               description = COALESCE(?,description), 
-               status = COALESCE(?,status) 
-               WHERE task_id = ?`,
-            [data.description, data.status, req.params.id],
+            `UPDATE interventi SET 
+               tipo = COALESCE(?, tipo), 
+               lezioneID = COALESCE(?, lezioneID), 
+               studenteID = COALESCE(?, studenteID) 
+               WHERE id = ?`,
+            [data.tipo, data.lezioneID, data.studenteID, req.params.id],
             function (err, result) {
-                if (err){
-                    res.status(400).json({"error": err.message})
+                if (err) {
+                    res.status(400).json({ "error": err.message });
                     return;
                 }
                 console.log(result )
@@ -91,30 +89,23 @@ function endpoint(app, connpool) {
                     message: "success",
                     data: data,
                     changes: result.affectedRows
-                })
-        });
-    })
+                });
+            });
+    });
 
-
-
-    app.delete("/api/tasks/:id", (req, res) => {
+    app.delete("/api/interventi/:id", (req, res) => {
         connpool.execute(
-            'DELETE FROM task WHERE task_id = ?',
+            'DELETE FROM interventi WHERE id = ?',
             [req.params.id],
             function (err, result) {
-                if (err){
-                    res.status(400).json({"error": err.message})
+                if (err) {
+                    res.status(400).json({ "error": err.message });
                     return;
                 }
-                res.json({"message":"deleted", changes: result.affectedRows})
-        });
-    })
-
+                res.json({ "message": "deleted", changes: result.affectedRows });
+            });
+    });
 
 }
-
-
-
-
 
 module.exports = endpoint;
