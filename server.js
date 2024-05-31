@@ -23,6 +23,7 @@ app.get("/", (req, res, next) => {
 require("./endpoints/tasks.js")(app,connpool)
 require("./endpoints/interventi.js")(app,connpool)
 require("./endpoints/lezione.js")(app,connpool)
+require("./endpoints/badge.js")(app,connpool)
 // Insert here other API endpoints
 
 // Default response for any other request
